@@ -1,0 +1,37 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3DrEtHdFZh6aMXG.39472e580f22 --database VsJD2HZhYTnzfPMAHp7zc2 --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "boatrace_beforeinfo"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "boatrace_weather"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "odds_history"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "prediction_results"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "racer_period_stats"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "stadium_rankings_history"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "users"
+    },
+    {
+      "Tables_in_VsJD2HZhYTnzfPMAHp7zc2": "web_predictions"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_VsJD2HZhYTnzfPMAHp7zc2\n__drizzle_migrations\nboatrace_beforeinfo\nboatrace_weather\nodds_history\nprediction_results\nracer_period_stats\nstadium_rankings_history\nusers\nweb_predictions\n",
+  "stderr": "",
+  "execution_time_ms": 1529
+}

@@ -1,0 +1,9 @@
+{
+  "query": "SELECT \n  race_date,\n  COUNT(*) as odds_count,\n  COUNT(DISTINCT stadium_code) as stadiums,\n  COUNT(DISTINCT race_number) as races,\n  MIN(scraped_at) as first_scraped,\n  MAX(scraped_at) as last_scraped\nFROM odds_history \nWHERE race_date >= '2026-01-01'\nGROUP BY race_date\nORDER BY race_date DESC\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3DrEtHdFZh6aMXG.39472e580f22 --database VsJD2HZhYTnzfPMAHp7zc2 --execute SELECT \n  race_date,\n  COUNT(*) as odds_count,\n  COUNT(DISTINCT stadium_code) as stadiums,\n  COUNT(DISTINCT race_number) as races,\n  MIN(scraped_at) as first_scraped,\n  MAX(scraped_at) as last_scraped\nFROM odds_history \nWHERE race_date >= '2026-01-01'\nGROUP BY race_date\nORDER BY race_date DESC\nLIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1600
+}

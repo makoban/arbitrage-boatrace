@@ -132,3 +132,59 @@ export const stadiumRankings = mysqlTable("stadium_rankings_history", {
   value: decimal("value", { precision: 10, scale: 2 }),
   scrapedAt: timestamp("scraped_at").notNull(),
 });
+
+/**
+ * レーステーブル - バッチ収集用
+ */
+export const races = mysqlTable("races", {
+  id: int("id").autoincrement().primaryKey(),
+  raceDate: date("race_date").notNull(),
+  stadiumCode: int("stadium_code").notNull(),
+  raceNumber: int("race_number").notNull(),
+  title: varchar("title", { length: 100 }),
+  deadlineAt: timestamp("deadline_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * オッズテーブル - バッチ収集用
+ */
+export const odds = mysqlTable("odds", {
+  id: int("id").autoincrement().primaryKey(),
+  raceId: int("race_id").notNull(),
+  scrapedAt: timestamp("scraped_at").notNull(),
+  oddsType: varchar("odds_type", { length: 20 }).notNull(),
+  combination: varchar("combination", { length: 20 }).notNull(),
+  oddsValue: decimal("odds_value", { precision: 10, scale: 2 }),
+  oddsMin: decimal("odds_min", { precision: 10, scale: 2 }),
+  oddsMax: decimal("odds_max", { precision: 10, scale: 2 }),
+});
+
+/**
+ * レース結果テーブル - バッチ収集用
+ */
+export const raceResults = mysqlTable("race_results", {
+  id: int("id").autoincrement().primaryKey(),
+  raceId: int("race_id").notNull(),
+  firstPlace: int("first_place"),
+  secondPlace: int("second_place"),
+  thirdPlace: int("third_place"),
+  fourthPlace: int("fourth_place"),
+  fifthPlace: int("fifth_place"),
+  sixthPlace: int("sixth_place"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * 払戻金テーブル - バッチ収集用
+ */
+export const payoffs = mysqlTable("payoffs", {
+  id: int("id").autoincrement().primaryKey(),
+  raceId: int("race_id").notNull(),
+  betType: varchar("bet_type", { length: 20 }).notNull(),
+  combination: varchar("combination", { length: 20 }).notNull(),
+  payoff: int("payoff").notNull(),
+  popularity: int("popularity"),
+});

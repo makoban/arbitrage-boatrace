@@ -1,0 +1,8 @@
+{
+  "query": "DESCRIBE races;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3DrEtHdFZh6aMXG.39472e580f22 --database VsJD2HZhYTnzfPMAHp7zc2 --execute DESCRIBE races;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'vsjd2hzhytnzfpmahp7zc2.races' doesn't exist"
+  ]
+}
