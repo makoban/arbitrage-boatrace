@@ -8,9 +8,19 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
+// getLoginUrlを安全に呼び出す
+function safeGetLoginUrl(): string {
+  try {
+    return getLoginUrl();
+  } catch (e) {
+    // OAuth環境変数が設定されていない場合は空文字を返す
+    console.warn("OAuth not configured:", e);
+    return "";
+  }
+}
+
 export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
-    options ?? {};
+  const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
   const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
@@ -65,9 +75,12 @@ export function useAuth(options?: UseAuthOptions) {
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
     if (typeof window === "undefined") return;
-    if (window.location.pathname === redirectPath) return;
+    
+    const targetPath = redirectPath || safeGetLoginUrl();
+    if (!targetPath) return; // OAuth未設定の場合はリダイレクトしない
+    if (window.location.pathname === targetPath) return;
 
-    window.location.href = redirectPath
+    window.location.href = targetPath;
   }, [
     redirectOnUnauthenticated,
     redirectPath,
