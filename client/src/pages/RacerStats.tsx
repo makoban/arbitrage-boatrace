@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Users, Trophy, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Users, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
 
 // レーサー詳細モーダル
 function RacerDetailModal({
@@ -73,8 +73,8 @@ function RacerDetailModal({
                 </span>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">生年</p>
-                <p className="font-medium">{racer.birthYear ? `${racer.birthYear}年` : "-"}</p>
+                <p className="text-sm text-muted-foreground">年齢</p>
+                <p className="font-medium">{racer.age ? `${racer.age}歳` : "-"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">体重</p>
@@ -93,7 +93,7 @@ function RacerDetailModal({
                         <th>期</th>
                         <th>級別</th>
                         <th>勝率</th>
-                        <th>2連率</th>
+                        <th>複勝率</th>
                         <th>平均ST</th>
                         <th>出走数</th>
                         <th>1着</th>
@@ -101,7 +101,7 @@ function RacerDetailModal({
                       </tr>
                     </thead>
                     <tbody>
-                      {racer.periodStats.map((stat, idx) => (
+                      {racer.periodStats.map((stat: any, idx: number) => (
                         <tr key={idx}>
                           <td className="font-medium">
                             {stat.dataYear}年{stat.dataPeriod === 1 ? "前期" : "後期"}
@@ -117,11 +117,11 @@ function RacerDetailModal({
                             </span>
                           </td>
                           <td className="font-medium">{stat.winRate?.toFixed(2) || "-"}</td>
-                          <td>{stat.doubleRate?.toFixed(2) || "-"}</td>
+                          <td>{stat.placeRate?.toFixed(1) || "-"}</td>
                           <td>{stat.avgSt?.toFixed(2) || "-"}</td>
                           <td>{stat.raceCount || "-"}</td>
-                          <td>{stat.rank1Count || "-"}</td>
-                          <td>{stat.rank2Count || "-"}</td>
+                          <td>{stat.firstCount || "-"}</td>
+                          <td>{stat.secondCount || "-"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -142,8 +142,8 @@ function RacerDetailModal({
 
 export default function RacerStats() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRank, setSelectedRank] = useState<string>("");
-  const [selectedBranch, setSelectedBranch] = useState<string>("");
+  const [selectedRank, setSelectedRank] = useState<string>("__all__");
+  const [selectedBranch, setSelectedBranch] = useState<string>("__all__");
   const [page, setPage] = useState(0);
   const [selectedRacerNo, setSelectedRacerNo] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -162,8 +162,8 @@ export default function RacerStats() {
   // レーサー検索
   const { data: racers, isLoading } = trpc.racer.search.useQuery({
     query: searchQuery || undefined,
-    rank: selectedRank || undefined,
-    branch: selectedBranch || undefined,
+    rank: selectedRank === "__all__" ? undefined : selectedRank,
+    branch: selectedBranch === "__all__" ? undefined : selectedBranch,
     limit: pageSize,
     offset: page * pageSize,
   });
@@ -179,8 +179,8 @@ export default function RacerStats() {
 
   const handleClearFilters = () => {
     setSearchQuery("");
-    setSelectedRank("");
-    setSelectedBranch("");
+    setSelectedRank("__all__");
+    setSelectedBranch("__all__");
     setPage(0);
   };
 
@@ -262,7 +262,7 @@ export default function RacerStats() {
                   <SelectValue placeholder="すべて" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">すべて</SelectItem>
+                  <SelectItem value="__all__">すべて</SelectItem>
                   {ranks?.map((rank) => (
                     <SelectItem key={rank} value={rank}>
                       {rank}
@@ -281,7 +281,7 @@ export default function RacerStats() {
                   <SelectValue placeholder="すべて" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">すべて</SelectItem>
+                  <SelectItem value="__all__">すべて</SelectItem>
                   {branches?.map((branch) => (
                     <SelectItem key={branch} value={branch}>
                       {branch}
@@ -325,7 +325,7 @@ export default function RacerStats() {
                       <th>支部</th>
                       <th>級別</th>
                       <th>勝率</th>
-                      <th>2連率</th>
+                      <th>複勝率</th>
                       <th>平均ST</th>
                       <th>出走数</th>
                       <th>期</th>
@@ -361,7 +361,7 @@ export default function RacerStats() {
                         <td className="font-medium">
                           {racer.winRate?.toFixed(2) || "-"}
                         </td>
-                        <td>{racer.doubleRate?.toFixed(2) || "-"}</td>
+                        <td>{racer.placeRate?.toFixed(1) || "-"}</td>
                         <td>{racer.avgSt?.toFixed(2) || "-"}</td>
                         <td>{racer.raceCount || "-"}</td>
                         <td className="text-sm text-muted-foreground">
@@ -402,7 +402,7 @@ export default function RacerStats() {
             </>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
-              {searchQuery || selectedRank || selectedBranch
+              {searchQuery || selectedRank !== "__all__" || selectedBranch !== "__all__"
                 ? "該当するレーサーが見つかりません"
                 : "検索条件を入力してください"}
             </div>
