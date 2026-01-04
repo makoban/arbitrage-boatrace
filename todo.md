@@ -63,3 +63,12 @@
 - [x] psycopg2からmysql-connectorへ変更
 - [x] テーブル作成SQLのMySQL互換化
 - [x] 払戻金保存エラーの修正
+
+## PostgreSQL接続（既存データ活用）
+
+- [x] ダッシュボードをRenderのPostgreSQLに接続
+- [x] 既存データの表示確認
+
+## 環境仕様書
+
+- [x] 環境仕様書の作成（kokotomo-db-staging、ai-auto-mailer）

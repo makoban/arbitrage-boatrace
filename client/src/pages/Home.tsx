@@ -21,16 +21,16 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              オッズ収集数
+              レース数
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.totalOdds?.toLocaleString() || 0}
+              {isLoading ? "..." : stats?.races?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              本日: {stats?.todayOdds?.toLocaleString() || 0}件
+              本日: {stats?.todayRaces?.toLocaleString() || 0}件
             </p>
           </CardContent>
         </Card>
@@ -38,16 +38,16 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              レーサーデータ
+              オッズ収集数
             </CardTitle>
-            <Users className="h-4 w-4 text-accent" />
+            <Database className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.totalRacers?.toLocaleString() || 0}
+              {isLoading ? "..." : stats?.odds?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              2002年〜2026年の期別成績
+              2連単・2連複・単勝・複勝
             </p>
           </CardContent>
         </Card>
@@ -55,16 +55,16 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              予想情報
+              レース結果
             </CardTitle>
-            <Database className="h-4 w-4 text-chart-3" />
+            <Activity className="h-4 w-4 text-chart-3" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.totalPredictions?.toLocaleString() || 0}
+              {isLoading ? "..." : stats?.results?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              競艇日和・公式予想
+              払戻金データ
             </p>
           </CardContent>
         </Card>
@@ -72,16 +72,18 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              直前情報
+              最終収集
             </CardTitle>
-            <Activity className="h-4 w-4 text-chart-4" />
+            <Clock className="h-4 w-4 text-chart-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.totalBeforeInfo?.toLocaleString() || 0}
+            <div className="text-lg font-bold">
+              {isLoading ? "..." : stats?.latestOdds
+                ? new Date(stats.latestOdds).toLocaleTimeString("ja-JP")
+                : "未収集"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              展示タイム・水面気象
+              オッズ収集時刻
             </p>
           </CardContent>
         </Card>
@@ -102,14 +104,14 @@ export default function Home() {
                 {todayRaces.slice(0, 10).map((race: any, index: number) => (
                   <Link
                     key={index}
-                    href={`/odds/${race.race_date}/${race.stadium_code}/${race.race_number}`}
+                    href={`/races`}
                     className="flex items-center justify-between p-2 rounded hover:bg-muted/50 transition-colors"
                   >
                     <span className="font-medium">
-                      {race.stadiumName} {race.race_number}R
+                      {race.stadiumName} {race.raceNumber}R
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      オッズ分析 →
+                      {race.result || "未確定"}
                     </span>
                   </Link>
                 ))}
@@ -140,24 +142,20 @@ export default function Home() {
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">最終オッズ収集</span>
-                <span className="text-sm">
-                  {stats?.latestOddsTime
-                    ? new Date(stats.latestOddsTime).toLocaleString("ja-JP")
-                    : "未収集"}
-                </span>
+                <span className="text-muted-foreground">データベース</span>
+                <span className="badge-success">PostgreSQL接続中</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">収集間隔</span>
-                <span className="badge-info">10秒（締切5分前）</span>
+                <span className="badge-info">10分ごと</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">対象オッズ</span>
                 <span className="badge-success">2連単・2連複・単勝・複勝</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">3連単・3連複</span>
-                <span className="badge-warning">対象外</span>
+                <span className="text-muted-foreground">結果収集</span>
+                <span className="badge-info">15分ごと</span>
               </div>
             </div>
           </CardContent>

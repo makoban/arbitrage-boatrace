@@ -39,16 +39,16 @@ export default function DataMonitor() {
             <Card className="bg-card border-border">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  オッズ履歴
+                  レース数
                 </CardTitle>
                 <Activity className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats?.totalOdds?.toLocaleString() || 0}
+                  {stats?.races?.toLocaleString() || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  本日: {stats?.todayOdds?.toLocaleString() || 0}件
+                  本日: {stats?.todayRaces?.toLocaleString() || 0}件
                 </p>
               </CardContent>
             </Card>
@@ -56,16 +56,16 @@ export default function DataMonitor() {
             <Card className="bg-card border-border">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  レーサー成績
+                  オッズ収集
                 </CardTitle>
                 <Database className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats?.totalRacers?.toLocaleString() || 0}
+                  {stats?.odds?.toLocaleString() || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  2002年〜2026年
+                  2連単・2連複・単勝・複勝
                 </p>
               </CardContent>
             </Card>
@@ -73,16 +73,16 @@ export default function DataMonitor() {
             <Card className="bg-card border-border">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  直前情報
+                  レース結果
                 </CardTitle>
                 <Clock className="h-4 w-4 text-chart-3" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {stats?.totalBeforeInfo?.toLocaleString() || 0}
+                  {stats?.results?.toLocaleString() || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  展示タイム・気象
+                  払戻金データ
                 </p>
               </CardContent>
             </Card>
@@ -90,16 +90,18 @@ export default function DataMonitor() {
             <Card className="bg-card border-border">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  WEB予想
+                  最終収集
                 </CardTitle>
                 <Server className="h-4 w-4 text-chart-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {stats?.totalPredictions?.toLocaleString() || 0}
+                <div className="text-lg font-bold">
+                  {stats?.latestOdds
+                    ? new Date(stats.latestOdds).toLocaleTimeString("ja-JP")
+                    : "未収集"}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  競艇日和・公式
+                  オッズ収集時刻
                 </p>
               </CardContent>
             </Card>
@@ -122,11 +124,29 @@ export default function DataMonitor() {
                 </thead>
                 <tbody>
                   <tr>
+                    <td className="font-medium">レース情報</td>
+                    <td>{stats?.races?.toLocaleString() || 0}</td>
+                    <td className="text-sm">-</td>
+                    <td>
+                      {stats?.races ? (
+                        <span className="badge-success flex items-center gap-1 w-fit">
+                          <CheckCircle className="h-3 w-3" />
+                          正常
+                        </span>
+                      ) : (
+                        <span className="badge-warning flex items-center gap-1 w-fit">
+                          <AlertTriangle className="h-3 w-3" />
+                          未収集
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  <tr>
                     <td className="font-medium">オッズ履歴</td>
-                    <td>{stats?.totalOdds?.toLocaleString() || 0}</td>
-                    <td className="text-sm">{formatDate(stats?.latestOddsTime)}</td>
+                    <td>{stats?.odds?.toLocaleString() || 0}</td>
+                    <td className="text-sm">{formatDate(stats?.latestOdds)}</td>
                     <td>
-                      {stats?.totalOdds ? (
+                      {stats?.odds ? (
                         <span className="badge-success flex items-center gap-1 w-fit">
                           <CheckCircle className="h-3 w-3" />
                           正常
@@ -140,83 +160,11 @@ export default function DataMonitor() {
                     </td>
                   </tr>
                   <tr>
-                    <td className="font-medium">レーサー期別成績</td>
-                    <td>{stats?.totalRacers?.toLocaleString() || 0}</td>
+                    <td className="font-medium">レース結果</td>
+                    <td>{stats?.results?.toLocaleString() || 0}</td>
                     <td className="text-sm">-</td>
                     <td>
-                      {stats?.totalRacers ? (
-                        <span className="badge-success flex items-center gap-1 w-fit">
-                          <CheckCircle className="h-3 w-3" />
-                          正常
-                        </span>
-                      ) : (
-                        <span className="badge-warning flex items-center gap-1 w-fit">
-                          <AlertTriangle className="h-3 w-3" />
-                          未収集
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">直前情報</td>
-                    <td>{stats?.totalBeforeInfo?.toLocaleString() || 0}</td>
-                    <td className="text-sm">-</td>
-                    <td>
-                      {stats?.totalBeforeInfo ? (
-                        <span className="badge-success flex items-center gap-1 w-fit">
-                          <CheckCircle className="h-3 w-3" />
-                          正常
-                        </span>
-                      ) : (
-                        <span className="badge-warning flex items-center gap-1 w-fit">
-                          <AlertTriangle className="h-3 w-3" />
-                          未収集
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">水面気象</td>
-                    <td>{stats?.totalWeather?.toLocaleString() || 0}</td>
-                    <td className="text-sm">-</td>
-                    <td>
-                      {stats?.totalWeather ? (
-                        <span className="badge-success flex items-center gap-1 w-fit">
-                          <CheckCircle className="h-3 w-3" />
-                          正常
-                        </span>
-                      ) : (
-                        <span className="badge-warning flex items-center gap-1 w-fit">
-                          <AlertTriangle className="h-3 w-3" />
-                          未収集
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">WEB予想</td>
-                    <td>{stats?.totalPredictions?.toLocaleString() || 0}</td>
-                    <td className="text-sm">-</td>
-                    <td>
-                      {stats?.totalPredictions ? (
-                        <span className="badge-success flex items-center gap-1 w-fit">
-                          <CheckCircle className="h-3 w-3" />
-                          正常
-                        </span>
-                      ) : (
-                        <span className="badge-warning flex items-center gap-1 w-fit">
-                          <AlertTriangle className="h-3 w-3" />
-                          未収集
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">場状況ランキング</td>
-                    <td>{stats?.totalStadiumRankings?.toLocaleString() || 0}</td>
-                    <td className="text-sm">-</td>
-                    <td>
-                      {stats?.totalStadiumRankings ? (
+                      {stats?.results ? (
                         <span className="badge-success flex items-center gap-1 w-fit">
                           <CheckCircle className="h-3 w-3" />
                           正常
@@ -247,10 +195,6 @@ export default function DataMonitor() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">通常間隔</span>
                       <span>10分</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">締切5分前〜</span>
-                      <span>10秒間隔</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">対象オッズ</span>
