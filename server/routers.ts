@@ -8,19 +8,18 @@ import {
   getPgTodayRaces,
   getPgRaces,
   getPgOddsHistory,
+  getPgOddsHistoryByRace,
   getPgRaceDetail,
   getPgRaceDates,
   getPgStadiums,
+  getPgBeforeInfo,
+  getPgWeatherInfo,
+  getPgPayoffs,
+  getPgRaceResult,
+  getPgRacesByDateRange,
+  getPgAvailableDates,
+  getStadiumName,
 } from "./pgdb";
-import {
-  getOddsHistory,
-  getBeforeInfo,
-  getWeatherInfo,
-  getCollectionStats,
-  getRacesByDateRange,
-  getTodayRaces,
-  STADIUM_MAP,
-} from "./db";
 
 export const appRouter = router({
   system: systemRouter,
@@ -33,31 +32,24 @@ export const appRouter = router({
     }),
   }),
 
-  // 競艇データAPI（TiDB/MySQL - odds_history等）
+  // 競艇データAPI（PostgreSQL）
   boatrace: router({
     // 会場マスタ
     getStadiums: publicProcedure.query(async () => {
-      return Object.entries(STADIUM_MAP).map(([code, name]) => ({
-        code,
-        name,
-      }));
+      return await getPgStadiums();
     }),
 
-    // 統計情報（TiDB）
+    // 統計情報
     getCollectionStats: publicProcedure.query(async () => {
-      return await getCollectionStats();
+      return await getPgCollectionStats();
     }),
 
-    // 本日のレース一覧（TiDB）
+    // 本日のレース一覧
     getTodayRaces: publicProcedure.query(async () => {
-      const races = await getTodayRaces();
-      return races.map((r: any) => ({
-        ...r,
-        stadiumName: STADIUM_MAP[r.stadium_code] || `場${r.stadium_code}`,
-      }));
+      return await getPgTodayRaces();
     }),
 
-    // 日付範囲でレース一覧を取得（TiDB）
+    // 日付範囲でレース一覧を取得（odds_historyから）
     getRacesByDateRange: publicProcedure
       .input(z.object({
         startDate: z.string().optional(),
@@ -65,35 +57,15 @@ export const appRouter = router({
         stadiumCode: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        // デフォルトは過去30日
-        const endDate = input.endDate || new Date().toISOString().split('T')[0];
-        const startDate = input.startDate || (() => {
-          const d = new Date();
-          d.setDate(d.getDate() - 30);
-          return d.toISOString().split('T')[0];
-        })();
-        
-        return await getRacesByDateRange({
-          startDate,
-          endDate,
-          stadiumCode: input.stadiumCode,
-        });
+        return await getPgRacesByDateRange(input);
       }),
 
     // 利用可能な日付一覧を取得
     getAvailableDates: publicProcedure.query(async () => {
-      const races = await getRacesByDateRange({
-        startDate: '2020-01-01',
-        endDate: new Date().toISOString().split('T')[0],
-      });
-      const dates = Array.from(new Set(races.map((r: any) => {
-        const d = r.race_date;
-        return typeof d === 'string' ? d.split('T')[0] : new Date(d).toISOString().split('T')[0];
-      })));
-      return dates.sort().reverse();
+      return await getPgAvailableDates();
     }),
 
-    // オッズ履歴（TiDB - 時系列データ）
+    // オッズ履歴（日付・会場・レース番号指定）
     getOddsHistory: publicProcedure
       .input(z.object({
         raceDate: z.string(),
@@ -102,15 +74,10 @@ export const appRouter = router({
         oddsType: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        return await getOddsHistory({
-          raceDate: input.raceDate,
-          stadiumCode: input.stadiumCode,
-          raceNumber: input.raceNumber,
-          oddsType: input.oddsType,
-        });
+        return await getPgOddsHistoryByRace(input);
       }),
 
-    // 直前情報（TiDB）
+    // 直前情報
     getBeforeInfo: publicProcedure
       .input(z.object({
         raceDate: z.string(),
@@ -118,14 +85,10 @@ export const appRouter = router({
         raceNumber: z.number(),
       }))
       .query(async ({ input }) => {
-        return await getBeforeInfo({
-          raceDate: input.raceDate,
-          stadiumCode: input.stadiumCode,
-          raceNumber: input.raceNumber,
-        });
+        return await getPgBeforeInfo(input);
       }),
 
-    // 水面気象情報（TiDB）
+    // 水面気象情報
     getWeatherInfo: publicProcedure
       .input(z.object({
         raceDate: z.string(),
@@ -133,16 +96,32 @@ export const appRouter = router({
         raceNumber: z.number(),
       }))
       .query(async ({ input }) => {
-        return await getWeatherInfo({
-          raceDate: input.raceDate,
-          stadiumCode: input.stadiumCode,
-          raceNumber: input.raceNumber,
-        });
+        return await getPgWeatherInfo(input);
       }),
 
-    // === PostgreSQL API（レガシー、必要に応じて使用） ===
-    
-    // レース一覧（PostgreSQL - フィルタ付き）
+    // 払戻金
+    getPayoffs: publicProcedure
+      .input(z.object({
+        raceDate: z.string(),
+        stadiumCode: z.string(),
+        raceNumber: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await getPgPayoffs(input);
+      }),
+
+    // レース結果
+    getRaceResult: publicProcedure
+      .input(z.object({
+        raceDate: z.string(),
+        stadiumCode: z.string(),
+        raceNumber: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await getPgRaceResult(input);
+      }),
+
+    // レース一覧（フィルタ付き）
     getRaces: publicProcedure
       .input(z.object({
         date: z.string().optional(),
@@ -154,7 +133,7 @@ export const appRouter = router({
         return await getPgRaces(input);
       }),
 
-    // 開催日一覧（PostgreSQL）
+    // 開催日一覧
     getRaceDates: publicProcedure
       .input(z.object({
         limit: z.number().optional(),
@@ -163,7 +142,7 @@ export const appRouter = router({
         return await getPgRaceDates(input.limit || 30);
       }),
 
-    // レース詳細（PostgreSQL）
+    // レース詳細
     getRaceDetail: publicProcedure
       .input(z.object({
         raceId: z.number(),
@@ -172,7 +151,7 @@ export const appRouter = router({
         return await getPgRaceDetail(input.raceId);
       }),
 
-    // オッズ履歴（PostgreSQL - raceId指定）
+    // オッズ履歴（raceId指定 - レガシー）
     getPgOddsHistory: publicProcedure
       .input(z.object({
         raceId: z.number(),

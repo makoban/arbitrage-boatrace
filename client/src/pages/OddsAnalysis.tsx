@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, TrendingUp, Clock, Trophy, AlertTriangle, BarChart3, Table2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, Clock, Trophy, AlertTriangle, BarChart3, Table2, Banknote } from "lucide-react";
 import { Link, useParams } from "wouter";
 
 // 会場コードと名前のマッピング
@@ -14,6 +14,8 @@ const STADIUM_MAP: Record<string, string> = {
   "11": "びわこ", "12": "住之江", "13": "尼崎", "14": "鳴門", "15": "丸亀",
   "16": "児島", "17": "宮島", "18": "徳山", "19": "下関", "20": "若松",
   "21": "芦屋", "22": "福岡", "23": "唐津", "24": "大村",
+  "1": "桐生", "2": "戸田", "3": "江戸川", "4": "平和島", "5": "多摩川",
+  "6": "浜名湖", "7": "蒲郡", "8": "常滑", "9": "津",
 };
 
 // オッズタイプの表示名
@@ -24,12 +26,32 @@ const ODDS_TYPE_LABELS: Record<string, string> = {
   "place": "複勝",
   "3t": "3連単",
   "3f": "3連複",
+  "tansho": "単勝",
+  "fukusho": "複勝",
+  "nirentan": "2連単",
+  "nirenfuku": "2連複",
+  "sanrentan": "3連単",
+  "sanrenfuku": "3連複",
+};
+
+// 賭け式の表示名
+const BET_TYPE_LABELS: Record<string, string> = {
+  "tansho": "単勝",
+  "fukusho": "複勝",
+  "nirentan": "2連単",
+  "nirenfuku": "2連複",
+  "sanrentan": "3連単",
+  "sanrenfuku": "3連複",
+  "2t": "2連単",
+  "2f": "2連複",
+  "3t": "3連単",
+  "3f": "3連複",
 };
 
 export default function OddsAnalysis() {
   const params = useParams();
   const { date, stadium, race } = params as { date: string; stadium: string; race: string };
-  const [selectedOddsType, setSelectedOddsType] = useState<string>("2t");
+  const [selectedOddsType, setSelectedOddsType] = useState<string>("all");
   const [selectedCombination, setSelectedCombination] = useState<string>("all");
 
   const stadiumName = STADIUM_MAP[stadium] || `場${stadium}`;
@@ -51,6 +73,20 @@ export default function OddsAnalysis() {
 
   // 水面気象情報を取得
   const { data: weatherInfo } = trpc.boatrace.getWeatherInfo.useQuery({
+    raceDate: date,
+    stadiumCode: stadium,
+    raceNumber: parseInt(race),
+  });
+
+  // 払戻金を取得
+  const { data: payoffs } = trpc.boatrace.getPayoffs.useQuery({
+    raceDate: date,
+    stadiumCode: stadium,
+    raceNumber: parseInt(race),
+  });
+
+  // レース結果を取得
+  const { data: raceResult } = trpc.boatrace.getRaceResult.useQuery({
     raceDate: date,
     stadiumCode: stadium,
     raceNumber: parseInt(race),
@@ -166,6 +202,73 @@ export default function OddsAnalysis() {
         </div>
       </div>
 
+      {/* レース結果 */}
+      {raceResult?.result && (
+        <Card className="bg-card border-border border-l-4 border-l-green-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-500" />
+              レース結果
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="text-2xl font-bold font-mono">
+                {raceResult.result.first}-{raceResult.result.second}-{raceResult.result.third}
+              </div>
+              {raceResult.result.fourth && (
+                <div className="text-muted-foreground">
+                  ({raceResult.result.fourth}-{raceResult.result.fifth}-{raceResult.result.sixth})
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 払戻金 */}
+      {payoffs && payoffs.length > 0 && (
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Banknote className="h-4 w-4 text-green-500" />
+              払戻金
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(
+                payoffs.reduce((acc: Record<string, any[]>, p: any) => {
+                  const type = p.bet_type;
+                  if (!acc[type]) acc[type] = [];
+                  acc[type].push(p);
+                  return acc;
+                }, {})
+              ).map(([type, items]) => (
+                <div key={type} className="bg-muted/30 rounded-lg p-3">
+                  <h4 className="font-medium text-sm mb-2 text-primary">
+                    {BET_TYPE_LABELS[type] || type}
+                  </h4>
+                  <div className="space-y-1">
+                    {(items as any[]).map((p: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span className="font-mono">{p.combination}</span>
+                        <span className="font-bold">¥{p.payoff?.toLocaleString()}</span>
+                        {p.popularity && (
+                          <span className="text-muted-foreground text-xs">
+                            {p.popularity}番人気
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 気象情報 */}
       {weatherInfo && (
         <Card className="bg-card border-border">
@@ -222,6 +325,7 @@ export default function OddsAnalysis() {
                   <tr>
                     <th>枠</th>
                     <th>選手番号</th>
+                    <th>選手名</th>
                     <th>展示タイム</th>
                     <th>チルト</th>
                     <th>スタート展示</th>
@@ -244,6 +348,7 @@ export default function OddsAnalysis() {
                         </span>
                       </td>
                       <td className="text-center">{info.racer_no || "-"}</td>
+                      <td>{info.racer_name || "-"}</td>
                       <td className="text-center font-mono">{info.exhibition_time || "-"}</td>
                       <td className="text-center">{info.tilt || "-"}</td>
                       <td className="text-center font-mono">{info.start_exhibition || "-"}</td>
