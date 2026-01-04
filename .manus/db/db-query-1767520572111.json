@@ -1,0 +1,17 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM races) as total_races,\n  (SELECT COUNT(*) FROM races WHERE race_date = CURRENT_DATE) as today_races,\n  (SELECT COUNT(*) FROM odds) as total_odds,\n  (SELECT MAX(scraped_at) FROM odds) as latest_odds_time,\n  (SELECT COUNT(*) FROM race_results) as total_results",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3DrEtHdFZh6aMXG.39472e580f22 --database VsJD2HZhYTnzfPMAHp7zc2 --execute SELECT \n  (SELECT COUNT(*) FROM races) as total_races,\n  (SELECT COUNT(*) FROM races WHERE race_date = CURRENT_DATE) as today_races,\n  (SELECT COUNT(*) FROM odds) as total_odds,\n  (SELECT MAX(scraped_at) FROM odds) as latest_odds_time,\n  (SELECT COUNT(*) FROM race_results) as total_results",
+  "rows": [
+    {
+      "total_races": "0",
+      "today_races": "0",
+      "total_odds": "0",
+      "latest_odds_time": "NULL",
+      "total_results": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_races\ttoday_races\ttotal_odds\tlatest_odds_time\ttotal_results\n0\t0\t0\tNULL\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1519
+}

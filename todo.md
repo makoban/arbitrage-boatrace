@@ -72,3 +72,17 @@
 ## 環境仕様書
 
 - [x] 環境仕様書の作成（kokotomo-db-staging、ai-auto-mailer）
+
+
+## 公式データ一括インポート（Renderバッチ）
+
+- [x] ダウンロード＆インポートスクリプト作成
+- [x] GitHubへプッシュ
+- [ ] Renderバッチジョブ設定
+
+## バッチ修正 (2026-01-04)
+
+- [x] historical-import: -lh5-圧縮形式対応（lhafileライブラリ使用）
+- [x] result-collection: 払戻金空文字エラー修正（人気順位NULL対応）
+- [x] daily-collection: 締切時刻(deadline_at)取得機能追加
+- [x] GitHubにプッシュしてRenderに反映
