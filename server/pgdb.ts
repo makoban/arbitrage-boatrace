@@ -51,32 +51,61 @@ export async function getPgCollectionStats() {
     const racesResult = await client.query('SELECT COUNT(*) as count FROM races');
     const racesCount = parseInt(racesResult.rows[0].count);
     
-    // オッズ数
-    const oddsResult = await client.query('SELECT COUNT(*) as count FROM odds');
-    const oddsCount = parseInt(oddsResult.rows[0].count);
+    // オッズ数（odds_historyテーブル）
+    const oddsHistoryResult = await client.query('SELECT COUNT(*) as count FROM odds_history');
+    const oddsHistoryCount = parseInt(oddsHistoryResult.rows[0].count);
     
-    // 結果数
-    const resultsResult = await client.query('SELECT COUNT(*) as count FROM race_results');
-    const resultsCount = parseInt(resultsResult.rows[0].count);
-    
-    // 本日のレース数
-    const todayResult = await client.query(
-      "SELECT COUNT(*) as count FROM races WHERE race_date = CURRENT_DATE"
+    // 本日のオッズ数
+    const todayOddsResult = await client.query(
+      "SELECT COUNT(*) as count FROM odds_history WHERE race_date = CURRENT_DATE"
     );
-    const todayRaces = parseInt(todayResult.rows[0].count);
+    const todayOdds = parseInt(todayOddsResult.rows[0].count);
+    
+    // レーサー成績数
+    const racersResult = await client.query('SELECT COUNT(*) as count FROM racer_period_stats');
+    const racersCount = parseInt(racersResult.rows[0].count);
+    
+    // 直前情報数
+    const beforeInfoResult = await client.query('SELECT COUNT(*) as count FROM boatrace_beforeinfo');
+    const beforeInfoCount = parseInt(beforeInfoResult.rows[0].count);
+    
+    // 水面気象情報数
+    const weatherResult = await client.query('SELECT COUNT(*) as count FROM boatrace_weather');
+    const weatherCount = parseInt(weatherResult.rows[0].count);
+    
+    // 予想情報数（web_predictions）
+    let predictionsCount = 0;
+    try {
+      const predictionsResult = await client.query('SELECT COUNT(*) as count FROM web_predictions');
+      predictionsCount = parseInt(predictionsResult.rows[0].count);
+    } catch (e) {
+      // テーブルが存在しない場合
+    }
+    
+    // 場状況ランキング数
+    let stadiumRankingsCount = 0;
+    try {
+      const rankingsResult = await client.query('SELECT COUNT(*) as count FROM stadium_rankings');
+      stadiumRankingsCount = parseInt(rankingsResult.rows[0].count);
+    } catch (e) {
+      // テーブルが存在しない場合
+    }
     
     // 最新オッズ収集時刻
     const latestOddsResult = await client.query(
-      'SELECT MAX(scraped_at) as latest FROM odds'
+      'SELECT MAX(scraped_at) as latest FROM odds_history'
     );
-    const latestOdds = latestOddsResult.rows[0].latest;
+    const latestOddsTime = latestOddsResult.rows[0].latest;
     
     return {
-      races: racesCount,
-      odds: oddsCount,
-      results: resultsCount,
-      todayRaces,
-      latestOdds,
+      totalOdds: oddsHistoryCount,
+      totalRacers: racersCount,
+      totalPredictions: predictionsCount,
+      totalBeforeInfo: beforeInfoCount,
+      totalWeather: weatherCount,
+      totalStadiumRankings: stadiumRankingsCount,
+      todayOdds,
+      latestOddsTime,
     };
   } finally {
     client.release();
@@ -193,7 +222,7 @@ export async function getPgRaces(params: {
 }
 
 /**
- * レースのオッズ履歴を取得
+ * レースのオッズ履歴を取得（raceId指定）
  */
 export async function getPgOddsHistory(raceId: number) {
   const pool = getPool();
@@ -214,6 +243,293 @@ export async function getPgOddsHistory(raceId: number) {
     `, [raceId]);
     
     return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * オッズ履歴を取得（日付・会場・レース番号指定）
+ * odds_historyテーブルから取得
+ */
+export async function getPgOddsHistoryByRace(params: {
+  raceDate: string;
+  stadiumCode: string;
+  raceNumber: number;
+  oddsType?: string;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    let query = `
+      SELECT 
+        id,
+        race_date,
+        stadium_code,
+        race_number,
+        odds_type,
+        combination,
+        odds_value,
+        odds_min,
+        odds_max,
+        scraped_at,
+        minutes_to_deadline
+      FROM odds_history
+      WHERE race_date = $1 AND stadium_code = $2 AND race_number = $3
+    `;
+    const values: any[] = [params.raceDate, params.stadiumCode, params.raceNumber];
+    
+    if (params.oddsType) {
+      query += ' AND odds_type = $4';
+      values.push(params.oddsType);
+    }
+    
+    query += ' ORDER BY scraped_at ASC, odds_type, combination';
+    
+    const result = await client.query(query, values);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * 直前情報を取得
+ */
+export async function getPgBeforeInfo(params: {
+  raceDate: string;
+  stadiumCode: string;
+  raceNumber: number;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(`
+      SELECT 
+        waku as lane,
+        racer_no,
+        racer_name,
+        weight,
+        exhibition_time,
+        tilt,
+        propeller,
+        parts_exchange as parts_changed,
+        start_exhibition_course,
+        start_exhibition_st as start_exhibition,
+        scraped_at
+      FROM boatrace_beforeinfo
+      WHERE race_date = $1 AND stadium_code = $2 AND race_number = $3
+      ORDER BY waku
+    `, [params.raceDate, params.stadiumCode, params.raceNumber]);
+    
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * 水面気象情報を取得
+ */
+export async function getPgWeatherInfo(params: {
+  raceDate: string;
+  stadiumCode: string;
+  raceNumber: number;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(`
+      SELECT 
+        temperature,
+        weather,
+        wind_direction,
+        wind_speed,
+        water_temperature,
+        wave_height,
+        scraped_at
+      FROM boatrace_weather
+      WHERE race_date = $1 AND stadium_code = $2 AND race_number = $3
+      LIMIT 1
+    `, [params.raceDate, params.stadiumCode, params.raceNumber]);
+    
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * 払戻金を取得（日付・会場・レース番号指定）
+ */
+export async function getPgPayoffs(params: {
+  raceDate: string;
+  stadiumCode: string;
+  raceNumber: number;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    // まずracesテーブルからrace_idを取得
+    const raceResult = await client.query(`
+      SELECT id FROM races
+      WHERE race_date = $1 AND stadium_code = $2 AND race_number = $3
+    `, [params.raceDate, parseInt(params.stadiumCode), params.raceNumber]);
+    
+    if (raceResult.rows.length === 0) {
+      return [];
+    }
+    
+    const raceId = raceResult.rows[0].id;
+    
+    const result = await client.query(`
+      SELECT bet_type, combination, payoff, popularity
+      FROM payoffs
+      WHERE race_id = $1
+      ORDER BY bet_type, popularity
+    `, [raceId]);
+    
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * レース結果を取得（日付・会場・レース番号指定）
+ */
+export async function getPgRaceResult(params: {
+  raceDate: string;
+  stadiumCode: string;
+  raceNumber: number;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(`
+      SELECT 
+        r.id,
+        r.race_date,
+        r.stadium_code,
+        r.race_number,
+        r.title,
+        rr.first_place,
+        rr.second_place,
+        rr.third_place,
+        rr.fourth_place,
+        rr.fifth_place,
+        rr.sixth_place
+      FROM races r
+      LEFT JOIN race_results rr ON r.id = rr.race_id
+      WHERE r.race_date = $1 AND r.stadium_code = $2 AND r.race_number = $3
+    `, [params.raceDate, parseInt(params.stadiumCode), params.raceNumber]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      raceDate: row.race_date,
+      stadiumCode: row.stadium_code,
+      stadiumName: getStadiumName(row.stadium_code),
+      raceNumber: row.race_number,
+      title: row.title,
+      result: row.first_place ? {
+        first: row.first_place,
+        second: row.second_place,
+        third: row.third_place,
+        fourth: row.fourth_place,
+        fifth: row.fifth_place,
+        sixth: row.sixth_place,
+      } : null,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * 日付範囲でレース一覧を取得（odds_historyから）
+ */
+export async function getPgRacesByDateRange(params: {
+  startDate?: string;
+  endDate?: string;
+  stadiumCode?: string;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    // odds_historyからユニークなレースを取得
+    let query = `
+      SELECT DISTINCT 
+        race_date,
+        stadium_code,
+        race_number,
+        COUNT(*) as odds_count
+      FROM odds_history
+      WHERE 1=1
+    `;
+    const values: any[] = [];
+    let paramIndex = 1;
+    
+    if (params.startDate) {
+      query += ` AND race_date >= $${paramIndex}`;
+      values.push(params.startDate);
+      paramIndex++;
+    }
+    
+    if (params.endDate) {
+      query += ` AND race_date <= $${paramIndex}`;
+      values.push(params.endDate);
+      paramIndex++;
+    }
+    
+    if (params.stadiumCode) {
+      query += ` AND stadium_code = $${paramIndex}`;
+      values.push(params.stadiumCode);
+      paramIndex++;
+    }
+    
+    query += ' GROUP BY race_date, stadium_code, race_number ORDER BY race_date DESC, stadium_code, race_number';
+    
+    const result = await client.query(query, values);
+    
+    return result.rows.map(row => ({
+      race_date: row.race_date,
+      stadium_code: row.stadium_code,
+      stadium_name: getStadiumName(row.stadium_code),
+      race_number: row.race_number,
+      odds_count: parseInt(row.odds_count),
+    }));
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * 利用可能な日付一覧を取得
+ */
+export async function getPgAvailableDates() {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(`
+      SELECT DISTINCT race_date
+      FROM odds_history
+      ORDER BY race_date DESC
+      LIMIT 90
+    `);
+    
+    return result.rows.map(row => row.race_date);
   } finally {
     client.release();
   }

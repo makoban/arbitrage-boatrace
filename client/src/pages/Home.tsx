@@ -21,16 +21,16 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              レース数
+              オッズ履歴
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.races?.toLocaleString() || 0}
+              {isLoading ? "..." : stats?.totalOdds?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              本日: {stats?.todayRaces?.toLocaleString() || 0}件
+              本日: {stats?.todayOdds?.toLocaleString() || 0}件
             </p>
           </CardContent>
         </Card>
@@ -38,16 +38,16 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              オッズ収集数
+              レーサー成績
             </CardTitle>
-            <Database className="h-4 w-4 text-accent" />
+            <Users className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.odds?.toLocaleString() || 0}
+              {isLoading ? "..." : stats?.totalRacers?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              2連単・2連複・単勝・複勝
+              期別成績データ
             </p>
           </CardContent>
         </Card>
@@ -55,16 +55,16 @@ export default function Home() {
         <Card className="bg-card border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              レース結果
+              直前情報
             </CardTitle>
             <Activity className="h-4 w-4 text-chart-3" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {isLoading ? "..." : stats?.results?.toLocaleString() || 0}
+              {isLoading ? "..." : stats?.totalBeforeInfo?.toLocaleString() || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              払戻金データ
+              展示タイム等
             </p>
           </CardContent>
         </Card>
@@ -78,8 +78,8 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold">
-              {isLoading ? "..." : stats?.latestOdds
-                ? new Date(stats.latestOdds).toLocaleTimeString("ja-JP")
+              {isLoading ? "..." : stats?.latestOddsTime
+                ? new Date(stats.latestOddsTime).toLocaleTimeString("ja-JP")
                 : "未収集"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -104,14 +104,14 @@ export default function Home() {
                 {todayRaces.slice(0, 10).map((race: any, index: number) => (
                   <Link
                     key={index}
-                    href={`/races`}
+                    href={`/odds/${race.race_date}/${race.stadium_code}/${race.race_number}`}
                     className="flex items-center justify-between p-2 rounded hover:bg-muted/50 transition-colors"
                   >
                     <span className="font-medium">
-                      {race.stadiumName} {race.raceNumber}R
+                      {race.stadiumName} {race.race_number}R
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {race.result || "未確定"}
+                      オッズ確認 →
                     </span>
                   </Link>
                 ))}
@@ -143,7 +143,7 @@ export default function Home() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">データベース</span>
-                <span className="badge-success">PostgreSQL接続中</span>
+                <span className="badge-success">TiDB接続中</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">収集間隔</span>
@@ -154,8 +154,8 @@ export default function Home() {
                 <span className="badge-success">2連単・2連複・単勝・複勝</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">結果収集</span>
-                <span className="badge-info">15分ごと</span>
+                <span className="text-muted-foreground">WEB予想</span>
+                <span className="badge-info">{stats?.totalPredictions?.toLocaleString() || 0}件</span>
               </div>
             </div>
           </CardContent>
