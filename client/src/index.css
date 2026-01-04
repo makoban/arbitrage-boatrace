@@ -79,38 +79,38 @@
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
+  --primary: oklch(0.65 0.18 230);
+  --primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.18 230);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --background: oklch(0.12 0.01 250);
+  --foreground: oklch(0.92 0.005 65);
+  --card: oklch(0.17 0.01 250);
+  --card-foreground: oklch(0.92 0.005 65);
+  --popover: oklch(0.17 0.01 250);
+  --popover-foreground: oklch(0.92 0.005 65);
+  --secondary: oklch(0.22 0.01 250);
+  --secondary-foreground: oklch(0.85 0.005 65);
+  --muted: oklch(0.22 0.01 250);
+  --muted-foreground: oklch(0.65 0.01 250);
+  --accent: oklch(0.55 0.15 180);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.55 0.2 25);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  --border: oklch(0.28 0.01 250);
+  --input: oklch(0.22 0.01 250);
+  --ring: oklch(0.65 0.18 230);
+  --chart-1: oklch(0.65 0.18 230);
+  --chart-2: oklch(0.55 0.15 180);
+  --chart-3: oklch(0.65 0.15 140);
+  --chart-4: oklch(0.7 0.15 60);
+  --chart-5: oklch(0.55 0.2 25);
+  --sidebar: oklch(0.1 0.01 250);
+  --sidebar-foreground: oklch(0.92 0.005 65);
+  --sidebar-accent: oklch(0.2 0.01 250);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.25 0.01 250);
+  --sidebar-ring: oklch(0.65 0.18 230);
 }
 
 @layer base {
@@ -131,6 +131,93 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: oklch(0.15 0 0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0.02 250);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.45 0.02 250);
+}
+
+/* Data table styles */
+.data-table {
+  @apply w-full text-sm;
+}
+
+.data-table th {
+  @apply px-3 py-2 text-left font-medium text-muted-foreground bg-muted/50;
+}
+
+.data-table td {
+  @apply px-3 py-2 border-t border-border;
+}
+
+.data-table tr:hover td {
+  @apply bg-muted/30;
+}
+
+/* Odds change indicators */
+.odds-up {
+  @apply text-red-400;
+}
+
+.odds-down {
+  @apply text-green-400;
+}
+
+.odds-stable {
+  @apply text-muted-foreground;
+}
+
+/* Race lane colors */
+.lane-1 { @apply bg-white text-black; }
+.lane-2 { @apply bg-black text-white border border-white/30; }
+.lane-3 { @apply bg-red-600 text-white; }
+.lane-4 { @apply bg-blue-600 text-white; }
+.lane-5 { @apply bg-yellow-400 text-black; }
+.lane-6 { @apply bg-green-600 text-white; }
+
+/* Stats card */
+.stats-card {
+  @apply bg-card rounded-lg p-4 border border-border;
+}
+
+.stats-card-title {
+  @apply text-sm text-muted-foreground mb-1;
+}
+
+.stats-card-value {
+  @apply text-2xl font-bold text-foreground;
+}
+
+/* Badge variants */
+.badge-success {
+  @apply bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-xs;
+}
+
+.badge-warning {
+  @apply bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded text-xs;
+}
+
+.badge-danger {
+  @apply bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-xs;
+}
+
+.badge-info {
+  @apply bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-xs;
 }
 
 @layer components {

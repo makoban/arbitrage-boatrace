@@ -4,35 +4,38 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
+import RaceList from "./pages/RaceList";
+import OddsAnalysis from "./pages/OddsAnalysis";
+import RacerStats from "./pages/RacerStats";
+import Predictions from "./pages/Predictions";
+import DataMonitor from "./pages/DataMonitor";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/" component={Home} />
+      <Route path="/races" component={RaceList} />
+      <Route path="/odds/:date/:stadium/:race" component={OddsAnalysis} />
+      <Route path="/racers" component={RacerStats} />
+      <Route path="/predictions" component={Predictions} />
+      <Route path="/monitor" component={DataMonitor} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <DashboardLayout>
+            <Router />
+          </DashboardLayout>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
