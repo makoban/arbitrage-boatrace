@@ -638,3 +638,286 @@ export async function getPgStadiums() {
     name,
   }));
 }
+
+
+/**
+ * レーサー検索
+ * 選手登録番号または名前で検索
+ */
+export async function getPgRacerSearch(params: {
+  query?: string;
+  rank?: string;
+  branch?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    let query = `
+      SELECT 
+        racer_no,
+        name_kanji,
+        name_kana,
+        branch,
+        rank,
+        birth_year,
+        gender,
+        weight,
+        win_rate,
+        double_rate,
+        avg_st,
+        race_count,
+        rank1_count,
+        rank2_count,
+        data_year,
+        data_period
+      FROM racer_period_stats
+      WHERE 1=1
+    `;
+    const values: any[] = [];
+    let paramIndex = 1;
+    
+    // 検索クエリ（選手番号または名前）
+    if (params.query) {
+      query += ` AND (racer_no LIKE $${paramIndex} OR name_kanji LIKE $${paramIndex + 1} OR name_kana LIKE $${paramIndex + 2})`;
+      values.push(`%${params.query}%`, `%${params.query}%`, `%${params.query}%`);
+      paramIndex += 3;
+    }
+    
+    // 級別フィルタ
+    if (params.rank) {
+      query += ` AND rank = $${paramIndex}`;
+      values.push(params.rank);
+      paramIndex++;
+    }
+    
+    // 支部フィルタ
+    if (params.branch) {
+      query += ` AND branch = $${paramIndex}`;
+      values.push(params.branch);
+      paramIndex++;
+    }
+    
+    // 最新の期のデータのみ取得
+    query += ` ORDER BY data_year DESC, data_period DESC, win_rate DESC NULLS LAST`;
+    
+    if (params.limit) {
+      query += ` LIMIT $${paramIndex}`;
+      values.push(params.limit);
+      paramIndex++;
+    }
+    
+    if (params.offset) {
+      query += ` OFFSET $${paramIndex}`;
+      values.push(params.offset);
+    }
+    
+    const result = await client.query(query, values);
+    
+    return result.rows.map(row => ({
+      racerNo: row.racer_no,
+      nameKanji: row.name_kanji,
+      nameKana: row.name_kana,
+      branch: row.branch,
+      rank: row.rank,
+      birthYear: row.birth_year,
+      gender: row.gender,
+      weight: row.weight,
+      winRate: row.win_rate ? parseFloat(row.win_rate) : null,
+      doubleRate: row.double_rate ? parseFloat(row.double_rate) : null,
+      avgSt: row.avg_st ? parseFloat(row.avg_st) : null,
+      raceCount: row.race_count,
+      rank1Count: row.rank1_count,
+      rank2Count: row.rank2_count,
+      dataYear: row.data_year,
+      dataPeriod: row.data_period,
+    }));
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * レーサー詳細を取得
+ * 選手登録番号で検索し、全期の成績を取得
+ */
+export async function getPgRacerDetail(racerNo: string) {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    // 全期の成績を取得
+    const result = await client.query(`
+      SELECT 
+        racer_no,
+        name_kanji,
+        name_kana,
+        branch,
+        rank,
+        birth_year,
+        gender,
+        weight,
+        win_rate,
+        double_rate,
+        avg_st,
+        race_count,
+        rank1_count,
+        rank2_count,
+        data_year,
+        data_period
+      FROM racer_period_stats
+      WHERE racer_no = $1
+      ORDER BY data_year DESC, data_period DESC
+    `, [racerNo]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    // 最新の基本情報
+    const latest = result.rows[0];
+    
+    // 期別成績の履歴
+    const periodStats = result.rows.map(row => ({
+      dataYear: row.data_year,
+      dataPeriod: row.data_period,
+      rank: row.rank,
+      winRate: row.win_rate ? parseFloat(row.win_rate) : null,
+      doubleRate: row.double_rate ? parseFloat(row.double_rate) : null,
+      avgSt: row.avg_st ? parseFloat(row.avg_st) : null,
+      raceCount: row.race_count,
+      rank1Count: row.rank1_count,
+      rank2Count: row.rank2_count,
+    }));
+    
+    return {
+      racerNo: latest.racer_no,
+      nameKanji: latest.name_kanji,
+      nameKana: latest.name_kana,
+      branch: latest.branch,
+      rank: latest.rank,
+      birthYear: latest.birth_year,
+      gender: latest.gender,
+      weight: latest.weight,
+      periodStats,
+    };
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * レーサーの支部一覧を取得
+ */
+export async function getPgRacerBranches() {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(`
+      SELECT DISTINCT branch
+      FROM racer_period_stats
+      WHERE branch IS NOT NULL AND branch != ''
+      ORDER BY branch
+    `);
+    
+    return result.rows.map(row => row.branch);
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * レーサーの級別一覧を取得
+ */
+export async function getPgRacerRanks() {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    const result = await client.query(`
+      SELECT DISTINCT rank
+      FROM racer_period_stats
+      WHERE rank IS NOT NULL AND rank != ''
+      ORDER BY 
+        CASE rank 
+          WHEN 'A1' THEN 1 
+          WHEN 'A2' THEN 2 
+          WHEN 'B1' THEN 3 
+          WHEN 'B2' THEN 4 
+          ELSE 5 
+        END
+    `);
+    
+    return result.rows.map(row => row.rank);
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * レーサー統計情報を取得
+ */
+export async function getPgRacerStats() {
+  const pool = getPool();
+  const client = await pool.connect();
+  
+  try {
+    // 総レーサー数（ユニーク）
+    const totalResult = await client.query(`
+      SELECT COUNT(DISTINCT racer_no) as count FROM racer_period_stats
+    `);
+    const totalRacers = parseInt(totalResult.rows[0].count);
+    
+    // 級別の人数
+    const rankResult = await client.query(`
+      SELECT rank, COUNT(DISTINCT racer_no) as count
+      FROM racer_period_stats
+      WHERE rank IS NOT NULL
+      GROUP BY rank
+      ORDER BY 
+        CASE rank 
+          WHEN 'A1' THEN 1 
+          WHEN 'A2' THEN 2 
+          WHEN 'B1' THEN 3 
+          WHEN 'B2' THEN 4 
+          ELSE 5 
+        END
+    `);
+    
+    // 支部別の人数
+    const branchResult = await client.query(`
+      SELECT branch, COUNT(DISTINCT racer_no) as count
+      FROM racer_period_stats
+      WHERE branch IS NOT NULL AND branch != ''
+      GROUP BY branch
+      ORDER BY count DESC
+    `);
+    
+    // データ期間
+    const periodResult = await client.query(`
+      SELECT MIN(data_year) as min_year, MAX(data_year) as max_year
+      FROM racer_period_stats
+    `);
+    
+    return {
+      totalRacers,
+      rankCounts: rankResult.rows.map(row => ({
+        rank: row.rank,
+        count: parseInt(row.count),
+      })),
+      branchCounts: branchResult.rows.map(row => ({
+        branch: row.branch,
+        count: parseInt(row.count),
+      })),
+      dataRange: {
+        minYear: periodResult.rows[0].min_year,
+        maxYear: periodResult.rows[0].max_year,
+      },
+    };
+  } finally {
+    client.release();
+  }
+}

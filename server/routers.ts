@@ -19,6 +19,11 @@ import {
   getPgRacesByDateRange,
   getPgAvailableDates,
   getStadiumName,
+  getPgRacerSearch,
+  getPgRacerDetail,
+  getPgRacerBranches,
+  getPgRacerRanks,
+  getPgRacerStats,
 } from "./pgdb";
 
 export const appRouter = router({
@@ -159,6 +164,49 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return await getPgOddsHistory(input.raceId);
       }),
+  }),
+
+  // レーサーAPI
+  racer: router({
+    // レーサー検索
+    search: publicProcedure
+      .input(z.object({
+        query: z.string().optional(),
+        rank: z.string().optional(),
+        branch: z.string().optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        return await getPgRacerSearch({
+          ...input,
+          limit: input.limit || 50,
+        });
+      }),
+
+    // レーサー詳細
+    getDetail: publicProcedure
+      .input(z.object({
+        racerNo: z.string(),
+      }))
+      .query(async ({ input }) => {
+        return await getPgRacerDetail(input.racerNo);
+      }),
+
+    // 支部一覧
+    getBranches: publicProcedure.query(async () => {
+      return await getPgRacerBranches();
+    }),
+
+    // 級別一覧
+    getRanks: publicProcedure.query(async () => {
+      return await getPgRacerRanks();
+    }),
+
+    // レーサー統計
+    getStats: publicProcedure.query(async () => {
+      return await getPgRacerStats();
+    }),
   }),
 });
 
